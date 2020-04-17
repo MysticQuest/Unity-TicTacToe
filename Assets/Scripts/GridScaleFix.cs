@@ -5,13 +5,14 @@ using UnityEngine.UI;
 
 public class GridScaleFix : MonoBehaviour
 {
-    public GridLayoutGroup grid;
-    public RectTransform imgRect;
+    private GridLayoutGroup grid;
+    private RectTransform imgRect;
+    [SerializeField] float spacing = 5f;
 
     private void Awake()
     {
         grid = GetComponent<GridLayoutGroup>();
         imgRect = transform.GetComponent<RectTransform>();
-        grid.cellSize = new Vector2(imgRect.sizeDelta.x / 3, imgRect.sizeDelta.y / 3);
+        grid.cellSize = new Vector2(imgRect.sizeDelta.x / 3 - spacing, imgRect.sizeDelta.y / 3 - spacing);
     }
 }

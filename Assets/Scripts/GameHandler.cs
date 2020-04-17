@@ -7,41 +7,57 @@ using UnityEngine.UI;
 
 public class GameHandler : MonoBehaviour
 {
-    [SerializeField] AI aiHandler;
+    private AI aiHandler;
+    [Header("Sprite Settings")]
     [SerializeField] private Sprite[] xoSprites = new Sprite[] { null, null };
+    [SerializeField] float restartDelay = 2f;
 
-    private Button[] buttonArray;
+    [SerializeField] private Button[] buttonArray;
+    private Button[,] buttonArray2D;
 
-    [SerializeField]
-    private string[] ticksArray = new string[8];
+    private string[] ticksArray = new string[9];
     private string xTick = "x";
     private string oTick = "o";
     private int filledBoxes = 0;
 
-    private GameObject gridImage;
+    private GameObject gridObject;
+    private Image msgTextImage;
     private Text msgText;
     private Text scoreXText;
     private Text scoreOText;
+
     private int xScore;
     private int oScore;
 
-    [SerializeField] private Image[] crossings;
+    private Image[] crossings;
 
-    [SerializeField] private bool playersTurn;
+    private bool playersTurn;
     private bool gameEnded = false;
 
     private float aiDelay;
-    [SerializeField] float endDelay = 1.5f;
 
     private void Awake()
     {
-        if (!aiHandler) { aiHandler = GameObject.Find("AI_Handler").GetComponent<AI>(); }
-        if (!gridImage) { gridImage = GameObject.Find("Grid"); }
-        if (!msgText) { msgText = GameObject.Find("MsgText").GetComponent<Text>(); }
-        if (!scoreXText) { scoreXText = GameObject.Find("XText").GetComponent<Text>(); }
-        if (!scoreOText) { scoreOText = GameObject.Find("OText").GetComponent<Text>(); }
+        aiHandler = GetComponent<AI>();
+        gridObject = GameObject.Find("Grid");
+        // buttonArray = gridObject.GetComponentsInChildren<Button>();
 
-        buttonArray = gridImage.GetComponentsInChildren<Button>();
+        buttonArray2D = new Button[3, 3];
+
+        int objIndex = 0;
+
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 3; col++)
+            {
+                buttonArray2D[row, col] = buttonArray[objIndex];
+                objIndex++;
+            }
+        }
+
+        msgText = GameObject.Find("MsgText").GetComponent<Text>();
+        scoreXText = GameObject.Find("XText").GetComponent<Text>();
+        scoreOText = GameObject.Find("OText").GetComponent<Text>();
         crossings = GameObject.Find("CrossingLine").GetComponentsInChildren<Image>();
     }
 
@@ -73,7 +89,7 @@ public class GameHandler : MonoBehaviour
     {
         DeactivateBoard();
         msgText.text = "Computer's turn..";
-        aiDelay = Random.Range(0.5f, 1.5f);
+        aiDelay = Random.Range(1f, 1.5f);
         yield return new WaitForSeconds(aiDelay);
         Tick(aiHandler.SetMove(ticksArray));
     }
@@ -165,9 +181,9 @@ public class GameHandler : MonoBehaviour
     {
         gameEnded = true;
         DeactivateBoard();
-        yield return new WaitForSeconds(endDelay);
+        yield return new WaitForSeconds(restartDelay);
         if (crossings[index].enabled) crossings[index].enabled = false;
-        RoundRestart();
+        RoundReset();
     }
 
     private void DeactivateBoard()
@@ -189,35 +205,15 @@ public class GameHandler : MonoBehaviour
         }
     }
 
-    private void RoundRestart()
+    private void RoundReset()
     {
-        msgText.text = string.Empty;
         filledBoxes = 0;
         for (int i = 0; i < buttonArray.Length; i++)
         {
             buttonArray[i].GetComponent<Image>().sprite = null;
-            // buttonArray[i].interactable = true;
             ticksArray[i] = "";
         }
         gameEnded = false;
         whoPlaysFirst();
     }
-
-
-    private void DisableButtons()
-    {
-        for (int i = 0; i < buttonArray.Length; i++)
-        {
-            buttonArray[i].enabled = false;
-        }
-    }
-
-    private void EnableButtons()
-    {
-        for (int i = 0; i < buttonArray.Length; i++)
-        {
-            buttonArray[i].enabled = true;
-        }
-    }
-
 }
