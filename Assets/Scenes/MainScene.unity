@@ -2092,22 +2092,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67a0e5c0f17797346a637845cfee4742, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aiHandler: {fileID: 0}
   xoSprites:
   - {fileID: 21300000, guid: 91b22750cb74b3b46958bc08826b2127, type: 3}
   - {fileID: 21300000, guid: 498241c574027e040ac49bf6cc0e8602, type: 3}
-  ticksArray:
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  playersTurn: 0
-  endDelay: 2
+  restartDelay: 2
+  buttonArray:
+  - {fileID: 958142931}
+  - {fileID: 1684962656}
+  - {fileID: 126144602}
+  - {fileID: 1856885499}
+  - {fileID: 1813286399}
+  - {fileID: 578273886}
+  - {fileID: 1832462977}
+  - {fileID: 30576583}
+  - {fileID: 531722736}
 --- !u!4 &1696771898
 Transform:
   m_ObjectHideFlags: 0
@@ -2134,7 +2132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daabe2a8ba0914444991e0f07a6f8740, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  difficulty: 0
+  difficulty: 1
 --- !u!1 &1708599019
 GameObject:
   m_ObjectHideFlags: 0

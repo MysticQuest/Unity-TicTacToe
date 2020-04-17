@@ -13,7 +13,7 @@ public class GameHandler : MonoBehaviour
     [SerializeField] float restartDelay = 2f;
 
     [SerializeField] private Button[] buttonArray;
-    private Button[,] buttonArray2D;
+    // private Button[,] buttonArray2D;
 
     private string[] ticksArray = new string[9];
     private string xTick = "x";
@@ -33,6 +33,7 @@ public class GameHandler : MonoBehaviour
 
     private bool playersTurn;
     private bool gameEnded = false;
+    private int crossIndex;
 
     private float aiDelay;
 
@@ -42,18 +43,16 @@ public class GameHandler : MonoBehaviour
         gridObject = GameObject.Find("Grid");
         // buttonArray = gridObject.GetComponentsInChildren<Button>();
 
-        buttonArray2D = new Button[3, 3];
-
-        int objIndex = 0;
-
-        for (int row = 0; row < 3; row++)
-        {
-            for (int col = 0; col < 3; col++)
-            {
-                buttonArray2D[row, col] = buttonArray[objIndex];
-                objIndex++;
-            }
-        }
+        // buttonArray2D = new Button[3, 3];
+        // int objIndex = 0;
+        // for (int row = 0; row < 3; row++)
+        // {
+        //     for (int col = 0; col < 3; col++)
+        //     {
+        //         buttonArray2D[row, col] = buttonArray[objIndex];
+        //         objIndex++;
+        //     }
+        // }
 
         msgText = GameObject.Find("MsgText").GetComponent<Text>();
         scoreXText = GameObject.Find("XText").GetComponent<Text>();
@@ -63,6 +62,7 @@ public class GameHandler : MonoBehaviour
 
     private void Start()
     {
+        DeactivateBoard();
         whoPlaysFirst();
     }
 
@@ -101,15 +101,14 @@ public class GameHandler : MonoBehaviour
         buttonArray[i].image.sprite = xoSprites[System.Convert.ToInt32(playersTurn)];
         buttonArray[i].interactable = false;
         if (playersTurn) { ticksArray[i] = xTick; } else { ticksArray[i] = oTick; };
-        filledBoxes++;
 
-        CheckEndConditions(filledBoxes);
+        ApplyEndConditions(CheckEndConditions(), crossIndex);
 
         //after tick switch
         if (playersTurn && !gameEnded)
         {
             playersTurn = false;
-            StartCoroutine(aiTurn()); // prin ta win conditions
+            StartCoroutine(aiTurn());
         }
         else if (!playersTurn && !gameEnded)
         {
@@ -118,8 +117,10 @@ public class GameHandler : MonoBehaviour
         }
     }
 
-    private void CheckEndConditions(int filledBoxes)
+    public int? CheckEndConditions()
     {
+        filledBoxes++;
+
         string[] pWin = { xTick, xTick, xTick };
         string[] pLose = { oTick, oTick, oTick };
 
@@ -138,29 +139,50 @@ public class GameHandler : MonoBehaviour
         for (int i = 0; i < winCombos.Length; i++)
         {
             //Win
-            if (pWin.SequenceEqual(winCombos[i]))
+            if (pWin.SequenceEqual(winCombos[i]) && !gameEnded)
             {
-                crossings[i].enabled = true;
-                SetWinDisplay();
-                StartCoroutine(EndSequence(i));
                 draw = false;
+                crossIndex = i;
+                return 1;
             }
             //Loss
-            else if (pLose.SequenceEqual(winCombos[i]))
+            else if (pLose.SequenceEqual(winCombos[i]) && !gameEnded)
             {
-                crossings[i].enabled = true;
-                SetLossDisplay();
-                StartCoroutine(EndSequence(i));
                 draw = false;
+                crossIndex = i;
+                return -1;
             }
         }
-
         //Draw
         if (filledBoxes >= 9 && draw)
         {
+            return 0;
+        }
+
+        return null;
+    }
+
+    private void ApplyEndConditions(int? result, int crossIndex)
+    {
+        if (result == 1)
+        {
+            crossings[crossIndex].enabled = true;
+            SetWinDisplay();
+            StartCoroutine(EndSequence(crossIndex));
+        }
+        else if (result == -1)
+        {
+            crossings[crossIndex].enabled = true;
+            SetLossDisplay();
+            StartCoroutine(EndSequence(crossIndex));
+        }
+        else if (result == 0)
+        {
+            result = 0;
             msgText.text = "Draw";
             StartCoroutine(EndSequence(0));
         }
+        else { return; }
     }
 
     private void SetWinDisplay()
