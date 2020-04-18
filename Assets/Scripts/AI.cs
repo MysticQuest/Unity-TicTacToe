@@ -1,17 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class AI : MonoBehaviour
 {
-
     private enum DifficultyOption
     {
-        Easy, Hard
+        Random = 0, RandomFirstMinMax = 1, MinMax = 2
     }
     [Header("Difficulty Settings")]
     [SerializeField] private DifficultyOption difficulty;
     private GameHandler gameHandler;
+
+    private string[,] ticksArray2D = new string[3, 3];
+
+    private string xTick = "x";
+    private string oTick = "o";
+    private string eTick = "";
 
     private void Awake()
     {
@@ -24,9 +30,17 @@ public class AI : MonoBehaviour
         {
             return PickRandomMove(ticksArray);
         }
+        else if ((int)difficulty == 1)
+        {
+            if (gameHandler.turnCount <= 2)
+            {
+                return PickRandomMove(ticksArray);
+            }
+            return PickGoodMove(Populate2DArray(ticksArray));
+        }
         else
         {
-            return PickNextMove(Populate2DArray(ticksArray));
+            return PickGoodMove(Populate2DArray(ticksArray));
         }
     }
 
@@ -46,7 +60,6 @@ public class AI : MonoBehaviour
 
     private string[,] Populate2DArray(string[] ticksArray)
     {
-        string[,] ticksArray2D = new string[3, 3];
         int objIndex = 0;
         for (int row = 0; row < 3; row++)
         {
@@ -59,9 +72,9 @@ public class AI : MonoBehaviour
         return ticksArray2D;
     }
 
-    private int PickNextMove(string[,] ticksArray2D)
+    private int PickGoodMove(string[,] ticksArray2D)
     {
-        float bestScore = -Mathf.Infinity;
+        int? bestScore = int.MinValue;
         int bestMove = 0;
         for (int row = 0; row < 3; row++)
         {
@@ -69,11 +82,10 @@ public class AI : MonoBehaviour
             {
                 if (string.IsNullOrEmpty(ticksArray2D[row, col]))
                 {
-                    ticksArray2D[row, col] = "o";
-                    float score = minimax(ticksArray2D, 0, true);
-                    Debug.Log(score); //score given to next "o" simulations
-                    ticksArray2D[row, col] = "";
-                    if (score > bestScore)
+                    ticksArray2D[row, col] = oTick;
+                    int? score = minimax(ticksArray2D, 0, false); //call simulate x
+                    ticksArray2D[row, col] = eTick;
+                    if (score >= bestScore)
                     {
                         bestScore = score;
                         bestMove = (row * 3) + col;
@@ -81,34 +93,31 @@ public class AI : MonoBehaviour
                 }
             }
         }
-        // Debug.Log(bestMove);
         return bestMove;
     }
 
-    enum scores
-    {
-        X = 1,
-        O = -1,
-        draw = 0
-    };
 
-    private float minimax(string[,] ticksArray2D, int depth, bool isMaximizing)
+    int? minimax(string[,] ticksArray2D, int depth, bool isMaximizing)
     {
-
-        // return 1;
+        int? result = VirtualCheckEndConditions(ticksArray2D);
+        // Debug.Log("BEST MOVE SCORE: " + result);
+        if (result != null)
+        {
+            return result;
+        }
 
         if (isMaximizing)
         {
-            float bestScore = -Mathf.Infinity;
+            int? bestScore = int.MinValue;
             for (int row = 0; row < 3; row++)
             {
                 for (int col = 0; col < 3; col++)
                 {
                     if (string.IsNullOrEmpty(ticksArray2D[row, col]))
                     {
-                        ticksArray2D[row, col] = "o";
-                        float score = minimax(ticksArray2D, depth + 1, false);
-                        ticksArray2D[row, col] = "";
+                        ticksArray2D[row, col] = oTick;
+                        int? score = minimax(ticksArray2D, depth + 1, false); //call simulate x
+                        ticksArray2D[row, col] = eTick;
                         if (score > bestScore)
                         {
                             bestScore = score;
@@ -116,20 +125,21 @@ public class AI : MonoBehaviour
                     }
                 }
             }
+            // Debug.Log("MAXIMIZING:" + bestScore);
             return bestScore;
         }
         else
         {
-            float bestScore = Mathf.Infinity;
+            int? bestScore = int.MaxValue;
             for (int row = 0; row < 3; row++)
             {
                 for (int col = 0; col < 3; col++)
                 {
                     if (string.IsNullOrEmpty(ticksArray2D[row, col]))
                     {
-                        ticksArray2D[row, col] = "x";
-                        float score = minimax(ticksArray2D, depth + 1, true);
-                        ticksArray2D[row, col] = "";
+                        ticksArray2D[row, col] = xTick;
+                        int? score = minimax(ticksArray2D, depth + 1, true); //call simulate o
+                        ticksArray2D[row, col] = eTick;
                         if (score < bestScore)
                         {
                             bestScore = score;
@@ -137,7 +147,62 @@ public class AI : MonoBehaviour
                     }
                 }
             }
+            // Debug.Log("MINIMIZING:" + bestScore);
             return bestScore;
         }
+    }
+
+    public int? VirtualCheckEndConditions(string[,] ticksArray2D)
+    {
+        string[] pcLoss = { xTick, xTick, xTick };
+        string[] pcWin = { oTick, oTick, oTick };
+
+        string[] h1 = { ticksArray2D[0, 0], ticksArray2D[0, 1], ticksArray2D[0, 2] };
+        string[] h2 = { ticksArray2D[1, 0], ticksArray2D[1, 1], ticksArray2D[1, 2] };
+        string[] h3 = { ticksArray2D[2, 0], ticksArray2D[2, 1], ticksArray2D[2, 2] };
+        string[] v1 = { ticksArray2D[0, 0], ticksArray2D[1, 0], ticksArray2D[2, 0] };
+        string[] v2 = { ticksArray2D[0, 1], ticksArray2D[1, 1], ticksArray2D[2, 1] };
+        string[] v3 = { ticksArray2D[0, 2], ticksArray2D[1, 2], ticksArray2D[2, 2] };
+        string[] d1 = { ticksArray2D[0, 0], ticksArray2D[1, 1], ticksArray2D[2, 2] };
+        string[] d2 = { ticksArray2D[0, 2], ticksArray2D[1, 1], ticksArray2D[2, 0] };
+
+        string[][] winCombos = { h1, h2, h3, v1, v2, v3, d1, d2 };
+
+        for (int i = 0; i < winCombos.Length; i++)
+        {
+            //Win
+            if (pcLoss.SequenceEqual(winCombos[i]))
+            {
+                return -1;
+            }
+            //Loss
+            else if (pcWin.SequenceEqual(winCombos[i]))
+            {
+                return 1;
+            }
+        }
+        // Draw
+        if (FindEmptySpaces() == 0)
+        {
+            return 0;
+        }
+
+        return null;
+    }
+
+    private int FindEmptySpaces()
+    {
+        int emptySpaces = 0;
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 3; col++)
+            {
+                if (string.IsNullOrEmpty(ticksArray2D[row, col]))
+                {
+                    emptySpaces++;
+                }
+            }
+        }
+        return emptySpaces;
     }
 }

@@ -10,49 +10,34 @@ public class GameHandler : MonoBehaviour
     private AI aiHandler;
     [Header("Sprite Settings")]
     [SerializeField] private Sprite[] xoSprites = new Sprite[] { null, null };
-    [SerializeField] float restartDelay = 2f;
+    [SerializeField] private float restartDelay = 2f;
+    [SerializeField] private float aiMinDelay = 0.5f;
+    [SerializeField] private float aiMaxDelay = 1.5f;
 
     [SerializeField] private Button[] buttonArray;
-    // private Button[,] buttonArray2D;
 
-    private string[] ticksArray = new string[9];
+    public string[] ticksArray = new string[9];
     private string xTick = "x";
     private string oTick = "o";
-    private int filledBoxes = 0;
+    private int emptyScaces = 9;
 
-    private GameObject gridObject;
-    private Image msgTextImage;
     private Text msgText;
     private Text scoreXText;
     private Text scoreOText;
+    private Image[] crossings;
 
     private int xScore;
     private int oScore;
-
-    private Image[] crossings;
 
     private bool playersTurn;
     private bool gameEnded = false;
     private int crossIndex;
 
-    private float aiDelay;
+    public int turnCount;
 
     private void Awake()
     {
         aiHandler = GetComponent<AI>();
-        gridObject = GameObject.Find("Grid");
-        // buttonArray = gridObject.GetComponentsInChildren<Button>();
-
-        // buttonArray2D = new Button[3, 3];
-        // int objIndex = 0;
-        // for (int row = 0; row < 3; row++)
-        // {
-        //     for (int col = 0; col < 3; col++)
-        //     {
-        //         buttonArray2D[row, col] = buttonArray[objIndex];
-        //         objIndex++;
-        //     }
-        // }
 
         msgText = GameObject.Find("MsgText").GetComponent<Text>();
         scoreXText = GameObject.Find("XText").GetComponent<Text>();
@@ -62,13 +47,14 @@ public class GameHandler : MonoBehaviour
 
     private void Start()
     {
-        DeactivateBoard();
+        DeactivateAllSpaces();
         whoPlaysFirst();
     }
 
     private void whoPlaysFirst()
     {
         playersTurn = (Random.Range(0, 2) == 0);
+
         if (playersTurn)
         {
             PlayersTurn();
@@ -87,10 +73,9 @@ public class GameHandler : MonoBehaviour
 
     private IEnumerator aiTurn()
     {
-        DeactivateBoard();
+        DeactivateAllSpaces();
         msgText.text = "Computer's turn..";
-        aiDelay = Random.Range(1f, 1.5f);
-        yield return new WaitForSeconds(aiDelay);
+        yield return new WaitForSeconds(Random.Range(aiMinDelay, aiMinDelay));
         Tick(aiHandler.SetMove(ticksArray));
     }
 
@@ -98,13 +83,19 @@ public class GameHandler : MonoBehaviour
     public void Tick(int i)
     {
         //pick sprite and register tick
+        turnCount++;
         buttonArray[i].image.sprite = xoSprites[System.Convert.ToInt32(playersTurn)];
         buttonArray[i].interactable = false;
         if (playersTurn) { ticksArray[i] = xTick; } else { ticksArray[i] = oTick; };
+        //
 
         ApplyEndConditions(CheckEndConditions(), crossIndex);
 
-        //after tick switch
+        SwitchPlayers();
+    }
+
+    private void SwitchPlayers()
+    {
         if (playersTurn && !gameEnded)
         {
             playersTurn = false;
@@ -119,7 +110,7 @@ public class GameHandler : MonoBehaviour
 
     public int? CheckEndConditions()
     {
-        filledBoxes++;
+        emptyScaces--;
 
         string[] pWin = { xTick, xTick, xTick };
         string[] pLose = { oTick, oTick, oTick };
@@ -135,30 +126,27 @@ public class GameHandler : MonoBehaviour
 
         string[][] winCombos = { h1, h2, h3, v1, v2, v3, d1, d2 };
 
-        bool draw = true;
         for (int i = 0; i < winCombos.Length; i++)
         {
             //Win
             if (pWin.SequenceEqual(winCombos[i]) && !gameEnded)
             {
-                draw = false;
                 crossIndex = i;
                 return 1;
             }
             //Loss
             else if (pLose.SequenceEqual(winCombos[i]) && !gameEnded)
             {
-                draw = false;
                 crossIndex = i;
                 return -1;
             }
         }
+
         //Draw
-        if (filledBoxes >= 9 && draw)
+        if (emptyScaces == 0)
         {
             return 0;
         }
-
         return null;
     }
 
@@ -168,21 +156,18 @@ public class GameHandler : MonoBehaviour
         {
             crossings[crossIndex].enabled = true;
             SetWinDisplay();
-            StartCoroutine(EndSequence(crossIndex));
         }
         else if (result == -1)
         {
             crossings[crossIndex].enabled = true;
             SetLossDisplay();
-            StartCoroutine(EndSequence(crossIndex));
         }
         else if (result == 0)
         {
-            result = 0;
             msgText.text = "Draw";
-            StartCoroutine(EndSequence(0));
         }
         else { return; }
+        StartCoroutine(EndSequence(crossIndex));
     }
 
     private void SetWinDisplay()
@@ -201,14 +186,27 @@ public class GameHandler : MonoBehaviour
 
     private IEnumerator EndSequence(int index)
     {
+        DeactivateAllSpaces();
         gameEnded = true;
-        DeactivateBoard();
         yield return new WaitForSeconds(restartDelay);
         if (crossings[index].enabled) crossings[index].enabled = false;
         RoundReset();
     }
 
-    private void DeactivateBoard()
+    private void RoundReset()
+    {
+        emptyScaces = 9;
+        turnCount = 0;
+        for (int i = 0; i < buttonArray.Length; i++)
+        {
+            buttonArray[i].GetComponent<Image>().sprite = null;
+            ticksArray[i] = "";
+        }
+        gameEnded = false;
+        whoPlaysFirst();
+    }
+
+    private void DeactivateAllSpaces()
     {
         for (int i = 0; i < buttonArray.Length; i++)
         {
@@ -227,15 +225,4 @@ public class GameHandler : MonoBehaviour
         }
     }
 
-    private void RoundReset()
-    {
-        filledBoxes = 0;
-        for (int i = 0; i < buttonArray.Length; i++)
-        {
-            buttonArray[i].GetComponent<Image>().sprite = null;
-            ticksArray[i] = "";
-        }
-        gameEnded = false;
-        whoPlaysFirst();
-    }
 }
