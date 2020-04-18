@@ -5,19 +5,22 @@ using UnityEngine;
 
 public class AI : MonoBehaviour
 {
-    private enum DifficultyOption
+#pragma warning disable 0649
+    private enum DifficultyOptions
     {
-        Random = 0, RandomFirstMinMax = 1, MinMax = 2
+        Random = 0, MinMax = 1, RandomFirstMinMax = 2, RfWMmWFlawChance = 3
     }
     [Header("Difficulty Settings")]
-    [SerializeField] private DifficultyOption difficulty;
+    [SerializeField] private DifficultyOptions difficulty;
     private GameHandler gameHandler;
+#pragma warning restore 0649
 
     private string[,] ticksArray2D = new string[3, 3];
 
     private string xTick = "x";
     private string oTick = "o";
     private string eTick = "";
+    private bool flawed;
 
     private void Awake()
     {
@@ -26,20 +29,35 @@ public class AI : MonoBehaviour
 
     public int SetMove(string[] ticksArray)
     {
+        flawed = false;
+
         if (difficulty == 0)
         {
             return PickRandomMove(ticksArray);
         }
         else if ((int)difficulty == 1)
         {
-            if (gameHandler.turnCount <= 2)
+            return PickGoodMove(Populate2DArray(ticksArray));
+        }
+        else if ((int)difficulty == 2)
+        {
+            if (gameHandler.turnCount <= 2 || gameHandler.turnCount <= 3 && !gameHandler.playerFirst)
             {
+                Debug.Log("Random move");
                 return PickRandomMove(ticksArray);
             }
+            Debug.Log("Minmaxed move");
             return PickGoodMove(Populate2DArray(ticksArray));
         }
         else
         {
+            if (gameHandler.turnCount <= 2 || gameHandler.turnCount <= 3 && !gameHandler.playerFirst)
+            {
+                Debug.Log("Random move");
+                return PickRandomMove(ticksArray);
+            }
+            flawed = true;
+            Debug.Log("ChanceforFlaw move");
             return PickGoodMove(Populate2DArray(ticksArray));
         }
     }
@@ -178,12 +196,20 @@ public class AI : MonoBehaviour
             //Loss
             else if (pcWin.SequenceEqual(winCombos[i]))
             {
+                if (flawed)
+                {
+                    return Random.Range(0, 2);
+                }
                 return 1;
             }
         }
         // Draw
         if (FindEmptySpaces() == 0)
         {
+            if (flawed)
+            {
+                return Random.Range(0, 4);
+            }
             return 0;
         }
 

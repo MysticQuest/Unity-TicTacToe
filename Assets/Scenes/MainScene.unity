@@ -2096,6 +2096,8 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 91b22750cb74b3b46958bc08826b2127, type: 3}
   - {fileID: 21300000, guid: 498241c574027e040ac49bf6cc0e8602, type: 3}
   restartDelay: 2
+  aiMinDelay: 0.5
+  aiMaxDelay: 1
   buttonArray:
   - {fileID: 958142931}
   - {fileID: 1684962656}
@@ -2106,6 +2108,18 @@ MonoBehaviour:
   - {fileID: 1832462977}
   - {fileID: 30576583}
   - {fileID: 531722736}
+  ticksArray:
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  playerFirst: 0
+  turnCount: 0
 --- !u!4 &1696771898
 Transform:
   m_ObjectHideFlags: 0
@@ -2132,7 +2146,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daabe2a8ba0914444991e0f07a6f8740, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  difficulty: 1
+  difficulty: 2
 --- !u!1 &1708599019
 GameObject:
   m_ObjectHideFlags: 0

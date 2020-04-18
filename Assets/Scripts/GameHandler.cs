@@ -14,9 +14,11 @@ public class GameHandler : MonoBehaviour
     [SerializeField] private float aiMinDelay = 0.5f;
     [SerializeField] private float aiMaxDelay = 1.5f;
 
+#pragma warning disable 0649
     [SerializeField] private Button[] buttonArray;
+#pragma warning restore 0649
 
-    public string[] ticksArray = new string[9];
+    private string[] ticksArray = new string[9];
     private string xTick = "x";
     private string oTick = "o";
     private int emptyScaces = 9;
@@ -30,9 +32,12 @@ public class GameHandler : MonoBehaviour
     private int oScore;
 
     private bool playersTurn;
+    [HideInInspector]
+    public bool playerFirst;
     private bool gameEnded = false;
-    private int crossIndex;
 
+    private int crossIndex;
+    [HideInInspector]
     public int turnCount;
 
     private void Awake()
@@ -54,7 +59,7 @@ public class GameHandler : MonoBehaviour
     private void whoPlaysFirst()
     {
         playersTurn = (Random.Range(0, 2) == 0);
-
+        playerFirst = playersTurn;
         if (playersTurn)
         {
             PlayersTurn();
@@ -75,7 +80,7 @@ public class GameHandler : MonoBehaviour
     {
         DeactivateAllSpaces();
         msgText.text = "Computer's turn..";
-        yield return new WaitForSeconds(Random.Range(aiMinDelay, aiMinDelay));
+        yield return new WaitForSeconds(Random.Range(aiMinDelay, aiMaxDelay));
         Tick(aiHandler.SetMove(ticksArray));
     }
 
@@ -112,8 +117,8 @@ public class GameHandler : MonoBehaviour
     {
         emptyScaces--;
 
-        string[] pWin = { xTick, xTick, xTick };
-        string[] pLose = { oTick, oTick, oTick };
+        string[] playerWin = { xTick, xTick, xTick };
+        string[] playerLoss = { oTick, oTick, oTick };
 
         string[] h1 = { ticksArray[0], ticksArray[1], ticksArray[2] };
         string[] h2 = { ticksArray[3], ticksArray[4], ticksArray[5] };
@@ -128,20 +133,17 @@ public class GameHandler : MonoBehaviour
 
         for (int i = 0; i < winCombos.Length; i++)
         {
-            //Win
-            if (pWin.SequenceEqual(winCombos[i]) && !gameEnded)
+            if (playerWin.SequenceEqual(winCombos[i]) && !gameEnded)
             {
                 crossIndex = i;
                 return 1;
             }
-            //Loss
-            else if (pLose.SequenceEqual(winCombos[i]) && !gameEnded)
+            else if (playerLoss.SequenceEqual(winCombos[i]) && !gameEnded)
             {
                 crossIndex = i;
                 return -1;
             }
         }
-
         //Draw
         if (emptyScaces == 0)
         {
